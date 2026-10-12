@@ -23,18 +23,18 @@ def load_npy(name):
     p = BASE / name
     return np.load(p, allow_pickle=False) if p.exists() else None
 
+
 @st.cache_resource
 def load_model():
     p = BASE / "eeg_workload_model.pkl.gz"
     if p.exists():
         try:
             with gzip.open(p, "rb") as f:
-                return pickle.load(f)
+                model = pickle.load(f)
+            return model
         except Exception as e:
             st.error(f"Could not load model: {e}")
     return None
-
-
 
 @st.cache_data
 def load_csv(name):
