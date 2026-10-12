@@ -28,6 +28,7 @@ def load_model():
 import gzip
 import pickle
 
+
 @st.cache_resource
 def load_model():
     p = BASE / "eeg_workload_model.pkl.gz"
@@ -38,6 +39,7 @@ def load_model():
         except Exception as e:
             st.error(f"Could not load model: {e}")
     return None
+
 
 @st.cache_data
 def load_csv(name):
