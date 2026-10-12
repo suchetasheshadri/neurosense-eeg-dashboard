@@ -22,12 +22,6 @@ BASE = Path(__file__).parent
 def load_npy(name):
     p = BASE / name
     return np.load(p, allow_pickle=False) if p.exists() else None
-@st.cache_resource
-def load_model():
-   
-import gzip
-import pickle
-
 
 @st.cache_resource
 def load_model():
@@ -39,6 +33,7 @@ def load_model():
         except Exception as e:
             st.error(f"Could not load model: {e}")
     return None
+
 
 
 @st.cache_data
