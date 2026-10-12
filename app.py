@@ -1,3 +1,6 @@
+
+import gzip
+import pickle
 import streamlit as st
 import numpy as np
 import pandas as pd
@@ -21,11 +24,21 @@ def load_npy(name):
     return np.load(p, allow_pickle=False) if p.exists() else None
 @st.cache_resource
 def load_model():
-    p = BASE / "eeg_workload_model.pkl"
+   
+import gzip
+import pickle
+
+@st.cache_resource
+def load_model():
+    p = BASE / "eeg_workload_model.pkl.gz"
     if p.exists():
-        try: return joblib.load(p)
-        except Exception: return None
+        try:
+            with gzip.open(p, "rb") as f:
+                return pickle.load(f)
+        except Exception as e:
+            st.error(f"Could not load model: {e}")
     return None
+
 @st.cache_data
 def load_csv(name):
     p = BASE / name
