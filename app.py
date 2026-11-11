@@ -38,30 +38,29 @@ def load_csv(name):
     return pd.read_csv(path) if path.exists() else None
 
 
-@st.cache_resource
+
+import gzip
+import io
+import joblib
 
 @st.cache_resource
 def load_model():
-    import gzip
+    model_path = BASE / "eeg_workload_model.pkl.gz"
 
-    compressed_path = BASE / "eeg_workload_model.pkl.gz"
-    normal_path = BASE / "eeg_workload_model.pkl"
+    if not model_path.exists():
+        raise FileNotFoundError("Model file is missing.")
 
-    try:
-        if compressed_path.exists():
-            with gzip.open(compressed_path, "rb") as f:
-                return joblib.load(f)
+    compressed_data = model_path.read_bytes()
+    model_data = gzip.decompress(compressed_data)
 
-        if normal_path.exists():
-            return joblib.load(normal_path)
+    return joblib.load(io.BytesIO(model_data))
 
-        st.error("Model file not found in the repository.")
-        return None
-
-    except Exception as exc:
-        st.error(f"Model loading failed: {type(exc).__name__}: {exc}")
-        return None
-
+try:
+    model = load_model()
+    st.success("Random Forest model loaded successfully!")
+except Exception as e:
+    model = None
+    st.error(f"Model loading failed: {type(e).__name__}: {e}")
 
 
 X = load_npy("STEW_X_demo.npy")
