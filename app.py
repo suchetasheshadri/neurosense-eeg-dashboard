@@ -44,7 +44,7 @@ def load_csv(name):
 
 @st.cache_resource
 def load_model():
-    path = BASE / "eeg_workload_model.pkl"
+    path = BASE / "eeg_workload_model.pkl.gz"
     if not path.exists():
         return None
     try:
