@@ -323,66 +323,93 @@ elif page == "EEG Explorer":
 # ---------------------------------------------------------------------
 elif page == "Workload Analysis":
     st.title("Workload Analysis")
-    st.markdown('<p class="ns-muted">Compare the recorded dataset label with the model prediction for a selected window.</p>', unsafe_allow_html=True)
+    st.markdown(
+        '<p class="ns-muted">Compare the recorded dataset label with the model prediction for a selected window.</p>',
+        unsafe_allow_html=True
+    )
+
     participant, indices, idx = sample_controls("work")
 
-if idx is None:
-    st.warning("Please select an EEG sample.")
-    st.stop()
+    if idx is None:
+        st.warning("Please select an EEG sample.")
+        st.stop()
 
-pred, proba = predict_one(idx)
+    pred, proba = predict_one(idx)
 
-    c1, c2 = st.columns(2)
+    # Convert numeric dataset classes into readable labels
     label_names = {
-    0: "Low Workload",
-    1: "High Workload"
-}
+        0: "Low Workload",
+        1: "High Workload"
+    }
 
-labels_for_display = load_npy("STEW_labels_demo.npy")
-if labels_for_display is None:
-    st.error("EEG labels file could not be loaded.")
-    st.stop()
+    labels_for_display = load_npy("STEW_labels_demo.npy")
 
-actual_label = int(labels_for_display[idx])
+    if labels_for_display is None:
+        st.error("EEG labels file could not be loaded.")
+        st.stop()
 
-if labels_for_display is None:
-    st.error("EEG labels file could not be loaded.")
-    st.stop()
+    actual_label = int(labels_for_display[idx])
 
-actual_label = int(labels_for_display[idx])
-c1.metric(
-    "Actual Workload",
-    label_names.get(actual_label, "Unknown")
-)
+    # Display actual and predicted workload
+    c1, c2 = st.columns(2)
 
-c2.metric(
-    "Predicted Workload",
-    label_names.get(int(pred), "Unknown") if pred is not None else "Unavailable"
-)
+    c1.metric(
+        "Actual Workload",
+        label_names.get(actual_label, "Unknown")
+    )
 
-if pred is not None:
-    if int(pred) == 1:
-        st.warning("High Workload detected. Consider taking a short break.")
-    else:
-        st.success("Low Workload detected.")
+    c2.metric(
+        "Predicted Workload",
+        label_names.get(int(pred), "Unknown") if pred is not None else "Unavailable"
+    )
 
+    # Give a simple interpretation of the prediction
     if pred is not None:
-        if pred == int(labels[idx]):
+        if int(pred) == 1:
+            st.warning("High Workload detected. Consider taking a short break.")
+        else:
+            st.success("Low Workload detected.")
+
+        # Compare prediction with the recorded dataset label
+        if int(pred) == actual_label:
             st.success("The model prediction matches this sample's recorded label.")
         else:
             st.warning("The model prediction differs from this sample's recorded label.")
 
-    if proba is not None:
+    # Display prediction probabilities
+    if proba is not None and model is not None:
         st.markdown("### Model prediction probabilities")
-        prob_df = pd.DataFrame({"Numeric class": [str(c) for c in model.classes_], "Probability": proba})
-        fig = px.bar(prob_df, x="Numeric class", y="Probability", title="Predicted probability by class", text=prob_df["Probability"].map(lambda v: f"{v:.1%}"))
+
+        prob_df = pd.DataFrame({
+            "Workload class": [
+                label_names.get(int(c), str(c)) for c in model.classes_
+            ],
+            "Probability": proba
+        })
+
+        fig = px.bar(
+            prob_df,
+            x="Workload class",
+            y="Probability",
+            title="Prediction probability by workload class",
+            text=prob_df["Probability"].map(lambda v: f"{v:.1%}")
+        )
+
         fig.update_yaxes(range=[0, 1], tickformat=".0%")
         st.plotly_chart(themed(fig, 350), use_container_width=True)
 
-    st.caption("Predictions use stored demo features and the trained model; they are not live EEG measurements.")
+    st.caption(
+        "Predictions use stored EEG demo features and the trained model. "
+        "They are not live EEG measurements."
+    )
+
     if predictions is not None:
         st.markdown("### Saved test predictions")
-        st.dataframe(predictions.head(20), use_container_width=True, hide_index=True)
+        st.dataframe(
+            predictions.head(20),
+            use_container_width=True,
+            hide_index=True
+        )
 
 
 # ---------------------------------------------------------------------
