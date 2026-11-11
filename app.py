@@ -135,10 +135,10 @@ def predict_one(idx):
 
 def sample_controls(prefix):
     participant_ids = sorted(np.unique(subjects).tolist())
-    participant = st.selectbox("Select participant", participant_ids, key=f"{prefix}_participant")
+    participant = st.selectbox("Choose a participant", participant_ids, key=f"{prefix}_participant")
     indices = np.where(subjects == participant)[0]
     idx = st.selectbox(
-        "Select EEG sample",
+        "Choose an EEG recording",
         indices.tolist(),
         format_func=lambda i: f"Sample {int(np.where(indices == i)[0][0]) + 1}",
         key=f"{prefix}_sample",
