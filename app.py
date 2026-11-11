@@ -39,17 +39,29 @@ def load_csv(name):
 
 
 @st.cache_resource
+
+@st.cache_resource
 def load_model():
-    # joblib can read gzip-compressed pickle files directly.
-    for name in ("eeg_workload_model.pkl.gz", "eeg_workload_model.pkl"):
-        path = BASE / name
-        if path.exists():
-            try:
-                return joblib.load(path)
-            except Exception as exc:
-                st.error(f"Could not load {name}: {exc}")
-                return None
-    return None
+    import gzip
+
+    compressed_path = BASE / "eeg_workload_model.pkl.gz"
+    normal_path = BASE / "eeg_workload_model.pkl"
+
+    try:
+        if compressed_path.exists():
+            with gzip.open(compressed_path, "rb") as f:
+                return joblib.load(f)
+
+        if normal_path.exists():
+            return joblib.load(normal_path)
+
+        st.error("Model file not found in the repository.")
+        return None
+
+    except Exception as exc:
+        st.error(f"Model loading failed: {type(exc).__name__}: {exc}")
+        return None
+
 
 
 X = load_npy("STEW_X_demo.npy")
