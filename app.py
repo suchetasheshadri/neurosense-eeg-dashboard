@@ -325,7 +325,12 @@ elif page == "Workload Analysis":
     st.title("Workload Analysis")
     st.markdown('<p class="ns-muted">Compare the recorded dataset label with the model prediction for a selected window.</p>', unsafe_allow_html=True)
     participant, indices, idx = sample_controls("work")
-    pred, proba = predict_one(idx)
+
+if idx is None:
+    st.warning("Please select an EEG sample.")
+    st.stop()
+
+pred, proba = predict_one(idx)
 
     c1, c2 = st.columns(2)
     label_names = {
