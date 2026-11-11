@@ -329,8 +329,28 @@ elif page == "Workload Analysis":
     pred, proba = predict_one(idx)
 
     c1, c2 = st.columns(2)
-    c1.metric("Ground-truth numeric label", int(labels[idx]))
-    c2.metric("Model-predicted numeric label", str(pred) if pred is not None else "Unavailable")
+    label_names = {
+    0: "Low Workload",
+    1: "High Workload"
+}
+
+actual_label = int(labels[idx])
+
+c1.metric(
+    "Actual Workload",
+    label_names.get(actual_label, "Unknown")
+)
+
+c2.metric(
+    "Predicted Workload",
+    label_names.get(int(pred), "Unknown") if pred is not None else "Unavailable"
+)
+
+if pred is not None:
+    if int(pred) == 1:
+        st.warning("High Workload detected. Consider taking a short break.")
+    else:
+        st.success("Low Workload detected.")
 
     if pred is not None:
         if pred == int(labels[idx]):
