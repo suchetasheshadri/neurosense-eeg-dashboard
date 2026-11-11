@@ -283,7 +283,7 @@ elif page == "Workload Insights":
 # ---------------------------------------------------------------------
 elif page == "EEG Explorer":
     st.title("EEG Explorer")
-    st.markdown('<p class="ns-muted">Explore a participant's recorded brain signals and their frequency patterns.</p>', unsafe_allow_html=True)
+    st.markdown("<p class='ns-muted'>Explore a participant's recorded brain signals and their frequency patterns.</p>", unsafe_allow_html=True)
     participant, indices, idx = sample_controls("explorer")
 
     left, right = st.columns(2)
