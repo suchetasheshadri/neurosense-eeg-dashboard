@@ -339,6 +339,11 @@ pred, proba = predict_one(idx)
 }
 
 labels_for_display = load_npy("STEW_labels_demo.npy")
+if labels_for_display is None:
+    st.error("EEG labels file could not be loaded.")
+    st.stop()
+
+actual_label = int(labels_for_display[idx])
 
 if labels_for_display is None:
     st.error("EEG labels file could not be loaded.")
