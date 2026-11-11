@@ -77,7 +77,6 @@ labels = load_npy("STEW_labels_demo.npy")
 subjects = load_npy("STEW_subjects_demo.npy")
 comparison = load_csv("model_comparison.csv")
 predictions = load_csv("test_predictions.csv")
-model = load_model()
 
 st.sidebar.title("🧠 NeuroSense")
 st.sidebar.caption("EEG-Based Workload Monitoring")
@@ -334,8 +333,8 @@ elif page == "Workload Analysis":
     1: "High Workload"
 }
 
-actual_label = int(labels[idx])
-
+labels_for_display = load_npy("STEW_labels_demo.npy")
+actual_label = int(labels_for_display[idx])
 c1.metric(
     "Actual Workload",
     label_names.get(actual_label, "Unknown")
