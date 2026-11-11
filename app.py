@@ -6,6 +6,14 @@ import plotly.express as px
 import plotly.graph_objects as go
 import streamlit as st
 
+
+def workload_name(label):
+    return {
+        0: "Low Workload",
+        1: "High Workload"
+    }.get(int(label), "Unknown")
+
+
 BASE = Path(__file__).parent
 FS = 128
 BANDS = ["Delta", "Theta", "Alpha", "Beta", "Gamma"]
