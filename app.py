@@ -283,16 +283,16 @@ elif page == "Workload Insights":
 # ---------------------------------------------------------------------
 elif page == "EEG Explorer":
     st.title("EEG Explorer")
-    st.markdown('<p class="ns-muted">Inspect a stored EEG waveform and its extracted frequency-band features.</p>', unsafe_allow_html=True)
+    st.markdown('<p class="ns-muted">Explore a participant's recorded brain signals and their frequency patterns.</p>', unsafe_allow_html=True)
     participant, indices, idx = sample_controls("explorer")
 
     left, right = st.columns(2)
-    left.metric("Selected sample", int(np.where(indices == idx)[0][0]) + 1)
-    right.metric("Recorded numeric class", int(labels[idx]))
+    left.metric("Sample information", int(np.where(indices == idx)[0][0]) + 1)
+    right.metric("Recorded workload level", int(labels[idx]))
 
-    st.markdown("### EEG waveform")
-    st.caption("Signal amplitude over the two-second selected sample.")
-    channel = st.selectbox("Choose EEG channel", list(range(1, 15)), format_func=lambda c: f"Channel {c}", key="wave_channel")
+    st.markdown("### Brain signal waveform")
+    st.caption("How the brain's electrical signal changes over 2 seconds.")
+    channel = st.selectbox("Choose an electrode channel", list(range(1, 15)), format_func=lambda c: f"Channel {c}", key="wave_channel")
     signal = X[idx, channel - 1, :]
     time = np.arange(len(signal)) / FS
 
