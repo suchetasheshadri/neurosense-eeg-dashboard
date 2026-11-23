@@ -131,7 +131,7 @@ def choose_recording(person, key):
     chosen = st.selectbox(
         "Choose a recording",
         list(range(len(rows))),
-        format_func=lambda k: f"Recording {k+1:03d}",
+        format_func=lambda k: f"Recording {k+1:03d} (demo window)",
         key=key
     )
     return int(rows[chosen]), rows
@@ -253,11 +253,12 @@ st.sidebar.caption("Understand brain signals. Explore workload patterns.")
 st.sidebar.markdown("---")
 pages = [
     "Welcome",
+    "About the dataset",
     "Explore an EEG recording",
     "Understand brain-wave activity",
+    "General well-being",
     "Workload report",
     "Compare recordings",
-    "About the dataset",
     "Brain connectivity",
     "Why did the AI predict this?",
     "Workload pattern over recordings",
@@ -266,6 +267,7 @@ pages = [
 page = st.sidebar.radio("ANALYSIS SECTIONS", pages, label_visibility="visible", key="nav_page")
 st.sidebar.markdown("---")
 st.sidebar.caption("Research prototype · Stored EEG data")
+st.sidebar.caption("Demo subset of held-out test participants")
 st.sidebar.caption("No live headset is connected.")
 
 if raw is None or features is None or labels is None or people is None:
@@ -288,43 +290,44 @@ if page == "Welcome":
     <div class="ns-hero">
       <div class="eyebrow">EEG · COGNITIVE WORKLOAD RESEARCH</div>
       <h1>NEUROSENSE</h1>
-      <p><b>From brain signals to interpretable workload evidence.</b><br>
-      NeuroSense analyses multichannel EEG recordings, extracts frequency patterns,
-      examines relationships between sensors and uses machine learning to study
-      workload-related brain activity.</p>
+      <p><b>An EEG-based cognitive workload analysis and interpretation platform.</b><br>
+      NeuroSense studies short, multichannel EEG recordings to understand their frequency
+      composition, examine relationships between sensors, and estimate workload-related
+      classes using a trained machine-learning model.</p>
     </div>
     """, unsafe_allow_html=True)
+    st.markdown("## What problem does the project address?")
+    st.write("Mental workload describes the amount of mental effort a person experiences while carrying out a task. EEG records small electrical signals from the scalp. These signals contain patterns that researchers can analyse when studying workload. Looking at a waveform alone is difficult, so NeuroSense turns the recordings into measurable features and interpretable visual summaries.")
     k1,k2,k3,k4 = st.columns(4)
     k1.metric("EEG sensors", "14")
     k2.metric("Sampling rate", "128 Hz")
     k3.metric("Window duration", "2 seconds")
-    k4.metric("Features per window", "70")
-    st.markdown("## What makes this more than a classifier?")
-    n1,n2,n3 = st.columns(3)
-    with n1:
-        st.markdown('<div class="ns-card"><small>01 · SIGNAL RELATIONSHIPS</small><h3>Brain connectivity</h3><p>Measure frequency-domain synchrony between sensor pairs, not only the activity at each sensor.</p></div>', unsafe_allow_html=True)
-    with n2:
-        st.markdown('<div class="ns-card"><small>02 · MODEL TRANSPARENCY</small><h3>Prediction explanation</h3><p>Show which sensor and frequency-band features most influence an individual model result.</p></div>', unsafe_allow_html=True)
-    with n3:
-        st.markdown('<div class="ns-card"><small>03 · RECORDING PATTERNS</small><h3>Across-window analysis</h3><p>Explore how model outputs and EEG features vary across the stored windows for a participant.</p></div>', unsafe_allow_html=True)
-    st.markdown("## Analysis workflow")
-    steps = st.columns(5)
+    k4.metric("Model inputs", "70 features")
+    st.markdown("## What does NeuroSense do?")
+    steps = st.columns(4)
     for col, (num, title, desc) in zip(steps, [
-        ("1", "EEG recordings", "14 sensors · STEW dataset"),
-        ("2", "Preprocessing", "1–40 Hz bandpass filter"),
-        ("3", "Feature analysis", "PSD bands + connectivity"),
-        ("4", "Machine learning", "Random Forest classification"),
-        ("5", "Interpretation", "Feature contribution + trends")
+        ("01", "Reads EEG", "Loads short recordings from the STEW research dataset."),
+        ("02", "Analyses signals", "Filters signals and studies five frequency bands."),
+        ("03", "Estimates workload", "Uses a trained Random Forest to predict a workload class."),
+        ("04", "Explains patterns", "Explores sensor connectivity, feature influence and recording trends.")
     ]):
         with col:
-            st.markdown(f'<div class="ns-card"><small>STEP {num}</small><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True)
+            st.markdown(f'<div class="ns-card"><small>{num}</small><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True)
+    st.markdown("## What is the project's contribution?")
+    n1,n2,n3 = st.columns(3)
+    with n1:
+        st.markdown('<div class="ns-card"><small>01 · SIGNAL ANALYSIS</small><h3>Frequency patterns</h3><p>Summarises EEG activity into Delta, Theta, Alpha, Beta and Gamma features for each sensor.</p></div>', unsafe_allow_html=True)
+    with n2:
+        st.markdown('<div class="ns-card"><small>02 · SENSOR RELATIONSHIPS</small><h3>Connectivity exploration</h3><p>Uses coherence to explore frequency relationships between pairs of EEG sensors.</p></div>', unsafe_allow_html=True)
+    with n3:
+        st.markdown('<div class="ns-card"><small>03 · INTERPRETABILITY</small><h3>Explainable model analysis</h3><p>Shows which extracted features influence a model result and how outputs vary across stored windows.</p></div>', unsafe_allow_html=True)
+    st.markdown("## Who can use this website?")
+    st.write("The interface is designed for students, researchers and visitors who want to understand how EEG signals are processed and how a machine-learning model analyses workload-related patterns. Each technical graph is accompanied by a plain-language explanation.")
     st.markdown("""
-    <div class="ns-note"><b>Project scope:</b> this is an offline research prototype using stored STEW EEG data.
-    It does not acquire signals wirelessly, diagnose a person or directly identify emotion, attention or fatigue.
-    The model predicts the dataset's two workload-related classes.</div>
+    <div class="ns-note"><b>Scope and limitations:</b> NeuroSense is an offline research prototype using stored STEW data. It does not connect to a wireless EEG headset or provide live monitoring. Its trained model predicts the two workload classes represented in the dataset. It does not diagnose medical conditions or independently detect emotions, focus, stress or fatigue.</div>
     """, unsafe_allow_html=True)
-    st.markdown("## Open an analysis")
-    st.write("Choose a section from the navigation panel. Start with EEG Signal Analysis, then explore Brain Connectivity and AI Explanation.")
+    st.markdown("## Suggested way to explore")
+    st.write("Start with **About the dataset** to understand the participants and recordings. Then explore a signal, learn what the frequency bands mean, and finally inspect the workload prediction and model evaluation.")
 
 # ============================================================
 # 2. EXPLORE A RECORDING
@@ -334,7 +337,8 @@ elif page == "Explore an EEG recording":
     st.write("Choose a person and a recording. NeuroSense will show the brain signals captured during that short recording.")
     person=st.selectbox("1. Choose a participant",participant_ids,format_func=participant_name,key="explore_person")
     idx,rows=choose_recording(person,"explore_record")
-    st.markdown('<div class="ns-step"><b>What you are looking at</b><br>Each recording lasts 2 seconds. Fourteen sensors record tiny electrical changes from different positions on the scalp.</div>',unsafe_allow_html=True)
+    st.markdown(f'<div class="ns-step"><b>Why these participant and recording numbers?</b><br>The participant number is the original ID from the STEW dataset. This website displays a compact subset of held-out test participants, so IDs are not renumbered consecutively. Recording 001, 002 and so on are simply the order of the available demo windows for that participant; they are not task names or session numbers.</div>',unsafe_allow_html=True)
+    st.markdown('<div class="ns-step"><b>What you are looking at</b><br>Each displayed window lasts 2 seconds. Fourteen EEG channels record small voltage changes from scalp electrodes. The traces are separated vertically for visibility; their vertical positions do not represent actual electrode locations.</div>',unsafe_allow_html=True)
     st.markdown("## The 14 recorded EEG traces")
     st.info("These are the 14 channels stored in the STEW data file, plotted as separate vertically offset traces so they can be viewed together. They are not a picture of the brain or a scalp electrode-position map. The vertical spacing is added only for readability; it is not a physical sensor distance.")
     show_all_sensors(idx)
@@ -349,57 +353,86 @@ elif page == "Explore an EEG recording":
 # ============================================================
 elif page == "Understand brain-wave activity":
     st.title("Understand brain-wave activity")
-    st.write("An EEG recording contains a mixture of electrical activity at different frequencies. NeuroSense groups the frequency content into five conventional bands.")
+    st.write("An EEG signal is made up of electrical activity that changes over time. Frequency analysis separates this complex signal into slower and faster patterns. Researchers group frequencies into bands so they can describe and compare the signal in a consistent way.")
     bands = [
-        ("Delta","1–4 Hz","Slow-frequency activity; commonly studied in sleep and other brain-state research."),
-        ("Theta","4–8 Hz","Studied in memory, learning and cognitive processing."),
-        ("Alpha","8–13 Hz","Often observed during relaxed wakefulness; its pattern can change with task conditions."),
-        ("Beta","13–30 Hz","Studied in active mental processing and sensorimotor activity."),
-        ("Gamma","30–40 Hz","Studied in higher-frequency neural processing; interpretation requires care because muscle noise can affect this range.")
+        ("Delta","1–4 Hz","The slowest band shown here. Delta activity is commonly studied in sleep and other brain-state research."),
+        ("Theta","4–8 Hz","Studied in memory, learning and cognitive processing. Its meaning depends on the task, sensor location and recording conditions."),
+        ("Alpha","8–13 Hz","Often prominent during relaxed wakefulness, particularly with reduced visual input. Alpha can change during tasks, but it is not a direct focus meter."),
+        ("Beta","13–30 Hz","Often studied in active cognitive and sensorimotor processing. It can also be affected by muscle activity."),
+        ("Gamma","30–40 Hz","A higher-frequency range studied in neural processing. It is especially important to interpret carefully because muscle artefacts can contaminate higher frequencies.")
     ]
     cols=st.columns(5)
     for col,(name,hz,desc) in zip(cols,bands):
         with col:
             st.markdown(f'<div class="ns-card"><small>{hz}</small><h3>{name}</h3><p>{desc}</p></div>',unsafe_allow_html=True)
+    st.markdown("## Why analyse these five bands?")
+    st.write("The raw EEG waveform contains many frequencies mixed together. Band analysis summarises the signal into interpretable frequency ranges. The project uses these five ranges to create a compact description of each sensor's activity. The values are inputs to the machine-learning model; no single band independently proves that a person is focused, stressed, tired or experiencing a particular emotion.")
+    st.markdown("## What is Power Spectral Density (PSD)?")
+    st.write("Power Spectral Density, or PSD, describes how the power of a signal is distributed over frequency. Instead of looking only at how the voltage changes over time, PSD helps answer: which frequency ranges contain more or less signal power?")
+    st.markdown("""
+    - **Time-domain graph:** shows signal amplitude as time passes.
+    - **Frequency-domain graph:** shows how the signal is distributed across frequencies.
+    - **PSD graph:** shows the estimated power per unit frequency. Peaks indicate frequencies where more signal power is concentrated.
+    - **Welch's method:** estimates PSD by dividing the signal into overlapping segments, calculating spectra and averaging them. Averaging helps produce a steadier estimate than using one raw periodogram.
+    """)
     st.markdown("## Explore frequency activity in one recording")
     person=st.selectbox("Choose a participant",participant_ids,format_func=participant_name,key="bands_person")
     idx,rows=choose_recording(person,"bands_record")
     values=band_means(idx)
     df=pd.DataFrame({"Frequency band":BAND_NAMES,"Mean PSD feature":values})
     fig=px.bar(df,x="Frequency band",y="Mean PSD feature",color="Frequency band",
-               title="Average power spectral density feature by frequency band")
+               title="Average extracted PSD feature in each frequency band")
     st.plotly_chart(style_plot(fig,380),use_container_width=True)
-
+    st.markdown("### How to read this bar chart")
+    st.write("Each bar represents one frequency band for the selected recording. A taller bar means the extracted mean PSD feature is numerically larger for that band. Compare the bars as features produced by the same processing pipeline; do not interpret a taller bar as automatically meaning higher workload or better concentration.")
     st.markdown("## Mean PSD features across the 14 sensors")
     table=pd.DataFrame(features[idx].reshape(14,5),columns=BAND_NAMES)
     table.insert(0,"Sensor", [f"Sensor {i}" for i in range(1,15)])
     st.dataframe(table.round(6),use_container_width=True,hide_index=True)
     st.markdown("### How to read this table")
     st.markdown("""
-    Each **row** represents one of the 14 EEG sensors. Each **column** represents one frequency band.
-    A cell is the average Power Spectral Density (PSD) feature extracted from that sensor's signal within that band's frequency range.
+    - **Each row** is one sensor (one EEG channel).
+    - **Each frequency column** is one band: Delta, Theta, Alpha, Beta or Gamma.
+    - **Each cell** is the mean PSD feature extracted for that sensor and band in the selected two-second recording.
+    - **The numbers are not workload scores.** They are signal features supplied to the machine-learning model.
+    - A larger number means a larger estimated power-density feature in that band under this processing pipeline. It does not by itself mean more focus, stress or workload.
 
-    - **PSD** describes how the signal's power is distributed over frequency.
-    - **Hz** (hertz) describes frequency: 1 Hz means one cycle per second.
-    - **Mean PSD feature** is calculated by averaging the PSD values across frequency bins inside the selected band. It is a numerical signal feature, not a workload score.
-    - A larger value means more measured signal power density in that frequency range for that sensor, compared with a smaller value from the same processing pipeline.
-    - Compare values within the same band and processing setup. Do not assume that a larger Alpha or Beta value automatically means more focus, stress or workload.
+    **What are the units?** PSD units depend on the physical unit and scaling of the original EEG signal. If the source signal is in microvolts, PSD is normally expressed in µV²/Hz. The app's demo feature file preserves its numerical scale, but the exact source scaling has not been verified here. For that reason, the table is labelled *mean PSD feature value* and no physical unit is asserted.
 
-    **Units:** PSD units are the square of the original EEG signal unit per hertz (for example, µV²/Hz if the source signal is stored in microvolts). This app preserves the numerical scale of the supplied feature file; the source file's physical scaling must be checked before displaying a definite µV²/Hz unit. Therefore, the table is shown as *mean PSD feature values* rather than assigning an unverified physical unit.
+    **How should I compare values?** Compare the same frequency band across sensors, or compare bands within this same recording while remembering that band widths differ. Avoid comparing absolute values across different datasets or preprocessing pipelines unless their units and scaling are consistent.
     """)
-    st.markdown("### Why are there 70 features?")
-    st.write("There are 14 sensors and 5 frequency bands per sensor. The feature vector therefore contains 14 × 5 = 70 numbers for each two-second EEG window. The Random Forest uses this 70-value description as its input.")
-    st.markdown("### What can these values tell us?")
-    st.write("They describe the frequency composition of the recorded EEG. They help compare recordings and provide inputs to the workload model. They do not independently diagnose attention, emotion, tiredness or a medical condition.")
-    st.markdown("### Research note: focus and emotions")
-    st.write("EEG frequency bands are studied in attention, sleepiness and emotion research. However, this project's trained model has workload labels only. NeuroSense therefore does not claim to recognise a person's focus or emotion.")
+    st.markdown("## Why are there 70 features?")
+    st.write("There are 14 sensors and 5 frequency bands per sensor. Therefore, 14 × 5 = 70 numerical features describe one two-second EEG window. The Random Forest receives these 70 values as its input.")
+    st.markdown("## What can and cannot be inferred?")
+    st.write("These features describe the frequency composition of recorded EEG. Together with the trained model, they support workload-class estimation. They do not independently diagnose attention, emotion, tiredness or a medical condition. The project's current labels are workload labels only.")
+
+# ============================================================
+# 4. GENERAL WELL-BEING
+# ============================================================
+elif page == "General well-being":
+    st.title("General well-being: practical information")
+    st.write("Mental workload is one part of a person's experience during a task. A demanding task can require sustained attention, memory and decision-making. EEG workload research studies signal patterns associated with these demands, but an EEG prediction is not a complete measure of someone's wellbeing.")
+    st.markdown("## Everyday practices that may support wellbeing")
+    tips = [
+        ("Take short breaks","After a period of demanding work, step away briefly, look away from the screen and allow time to reset."),
+        ("Protect sleep","A consistent sleep routine supports everyday cognitive functioning and recovery."),
+        ("Stay hydrated and eat regularly","Basic hydration and regular meals can help support general wellbeing during study or work."),
+        ("Move between study sessions","Light movement or a short walk can break up long periods of sitting."),
+        ("Break large tasks into smaller steps","Clear priorities and manageable work intervals can make demanding tasks easier to organise."),
+        ("Notice persistent difficulties","If stress, sleep problems or concentration difficulties persist or interfere with daily life, consider speaking with a qualified health professional.")
+    ]
+    for title,desc in tips:
+        st.markdown(f'<div class="ns-step"><b>{title}</b><br>{desc}</div>',unsafe_allow_html=True)
+    st.markdown("## How this relates to NeuroSense")
+    st.write("The suggestions above are general educational information. They are not personalised from EEG measurements and are not generated by the Random Forest model. NeuroSense does not determine whether a person is healthy, stressed, emotionally well or unwell.")
+    st.warning("Do not use a workload prediction to make medical decisions. This project is an educational research prototype, not a clinical device or a substitute for professional assessment.")
 
 # ============================================================
 # 4. WORKLOAD REPORT
 # ============================================================
 elif page == "Workload report":
     st.title("Workload report")
-    st.write("Select a stored EEG recording to view the model's workload prediction and the dataset's reference label.")
+    st.write("Choose a stored EEG window to see the Random Forest prediction and compare it with the reference label supplied with the dataset.")
     person=st.selectbox("Choose a participant",participant_ids,format_func=participant_name,key="report_person")
     idx,rows=choose_recording(person,"report_record")
     pred,probs=get_prediction(idx)
@@ -409,26 +442,25 @@ elif page == "Workload report":
     else:
         x,y=st.columns(2)
         with x:
-            st.markdown(f'<div class="ns-card"><small>AI MODEL PREDICTION</small><div style="font-size:2rem;font-weight:800;margin-top:10px">{workload_name(pred)}</div><p>Predicted workload class for this recording.</p></div>',unsafe_allow_html=True)
+            st.markdown(f'<div class="ns-card"><small>MODEL PREDICTION</small><div style="font-size:2rem;font-weight:800;margin-top:10px">{workload_name(pred)}</div><p>What the Random Forest predicts from this EEG window.</p></div>',unsafe_allow_html=True)
         with y:
-            st.markdown(f'<div class="ns-card"><small>DATASET REFERENCE</small><div style="font-size:2rem;font-weight:800;margin-top:10px">{workload_name(actual)}</div><p>Workload label stored with this recording.</p></div>',unsafe_allow_html=True)
+            st.markdown(f'<div class="ns-card"><small>DATASET REFERENCE LABEL</small><div style="font-size:2rem;font-weight:800;margin-top:10px">{workload_name(actual)}</div><p>The reference label stored with this EEG window.</p></div>',unsafe_allow_html=True)
         if pred==actual:
-            st.success("The model prediction matches the dataset reference label for this recording.")
+            st.success("For this selected window, the model prediction agrees with the dataset reference label.")
         else:
-            st.warning("The model prediction does not match the dataset reference label for this recording.")
+            st.warning("For this selected window, the model prediction differs from the dataset reference label. Individual mistakes are expected; overall performance is evaluated in Research Results.")
         if probs is not None:
             df=pd.DataFrame({"Workload level":[workload_name(c) for c in model.classes_],"Model output":probs})
             fig=px.bar(df,x="Workload level",y="Model output",color="Workload level",
                        text=df["Model output"].map(lambda v:f"{v:.1%}"),
-                       title="Model output for low- and high-workload classes")
+                       title="How strongly the model favours each workload class")
             fig.update_yaxes(range=[0,1],tickformat=".0%")
             st.plotly_chart(style_plot(fig,310),use_container_width=True)
-            st.caption("The percentages are the model's output scores for the two classes. They are not medical certainty and may not be calibrated probabilities.")
-    st.markdown("## Understanding your result")
-    st.write("The model analyses 70 frequency-domain features extracted from the 14 EEG sensors and selects the workload class whose learned patterns best match this recording.")
-    st.markdown("## General wellbeing information")
-    st.write("This page provides general information only. If a person feels mentally overloaded during study or work, it may help to pause briefly, take a screen break, hydrate, and return to the task after resting. Maintain regular sleep, meals and movement. These suggestions are not generated from the EEG prediction and are not medical advice.")
-    st.caption("NeuroSense is a research prototype. It does not diagnose a health condition or measure a person's overall wellbeing.")
+            st.markdown("### How to read the model output")
+            st.write("Each bar is the model's output score for one workload class. If one bar is higher, the model favours that class more strongly for this recording. These scores are not guaranteed to be calibrated probabilities and should not be treated as medical certainty.")
+    st.markdown("## How does the system produce this report?")
+    st.write("The selected EEG window is represented by 70 PSD features (five frequency bands from each of 14 sensors). The trained Random Forest processes these features and returns one of the two workload classes. The dataset reference label is shown separately so the prediction can be checked for this example.")
+    st.info("The prediction describes the model's interpretation of a stored two-second EEG window. It does not measure a person's complete mental state, diagnose a condition or establish their ability to work or study.")
 
 # ============================================================
 # 5. COMPARE RECORDINGS
@@ -460,6 +492,20 @@ elif page == "Compare recordings":
         fig.update_layout(barmode="group",title="Compare the five frequency-band features",
                           xaxis_title="Frequency band",yaxis_title="Extracted feature value")
         st.plotly_chart(style_plot(fig,390),use_container_width=True)
+        st.markdown("### How to interpret the comparison")
+        st.write("The grouped bars place the same frequency band from Recording A and Recording B next to each other. For each band, compare the bar heights: the taller bar has the larger extracted feature value in that recording. This is a descriptive comparison, not proof that one participant has higher workload.")
+        delta_df = pd.DataFrame({
+            "Frequency band": BAND_NAMES,
+            "Recording A": band_means(i1),
+            "Recording B": band_means(i2),
+        })
+        delta_df["Difference (B − A)"] = delta_df["Recording B"] - delta_df["Recording A"]
+        delta_df["Larger feature value"] = np.where(delta_df["Difference (B − A)"] > 0,
+                                                       "Recording B",
+                                                       np.where(delta_df["Difference (B − A)"] < 0, "Recording A", "Equal"))
+        st.markdown("### Which recording has the larger feature value in each band?")
+        st.dataframe(delta_df.round(6), use_container_width=True, hide_index=True)
+        st.write("A positive difference means Recording B has a larger feature value in that band; a negative difference means Recording A is larger. The size of the difference is in the feature file's numerical scale, not a percentage of workload.")
         with st.expander("Compare the two recordings' waveforms"):
             s1=st.selectbox("Choose a sensor to compare",list(range(14)),format_func=lambda x:f"Sensor {x+1}",key="compare_sensor")
             t=np.arange(256)/FS
@@ -468,6 +514,7 @@ elif page == "Compare recordings":
             fig.add_trace(go.Scatter(x=t,y=raw[i2,s1,:],name=f"{participant_name(p2)}"))
             fig.update_layout(title="Same sensor position, two recordings",xaxis_title="Time (seconds)",yaxis_title="Signal strength")
             st.plotly_chart(style_plot(fig,360),use_container_width=True)
+            st.write("This graph overlays the same sensor position from both recordings. The horizontal axis is time in seconds and the vertical axis is signal amplitude in the dataset's numerical units. Differences in shape or amplitude are visible, but the plot alone does not identify their cause.")
         st.caption("Differences are descriptive comparisons of stored recordings. They do not establish that one participant is more focused, sleepy or emotionally different.")
 
 # ============================================================
@@ -475,33 +522,58 @@ elif page == "Compare recordings":
 # ============================================================
 elif page == "About the dataset":
     st.title("About the STEW dataset")
-    st.write("NeuroSense uses stored multichannel EEG recordings from the STEW (Simultaneous Task EEG Workload) research dataset.")
-    a,b,c,d=st.columns(4)
-    a.metric("Demo windows loaded",f"{n:,}")
-    b.metric("Participants in demo",len(participant_ids))
-    c.metric("Sensors per window",14)
-    d.metric("Samples per sensor",256)
-    st.markdown("## What does one EEG window contain?")
-    st.write("Each window is a short segment of EEG sampled from 14 sensors. At 128 samples per second, 256 samples represent 2 seconds of signal from each sensor.")
-    st.markdown("## How 70 features are formed")
+    st.write("This project uses the STEW dataset — Simultaneous Task EEG Workload — a research dataset created to study EEG patterns associated with mental workload during multitasking.")
+    st.markdown("## The original dataset")
+    a,b,c,d = st.columns(4)
+    a.metric("Participants", "48")
+    b.metric("EEG windows", "28,512")
+    c.metric("EEG sensors", "14")
+    d.metric("Sampling rate", "128 Hz")
     st.markdown("""
-    <div class="ns-step"><b>Step 1 · 14 sensor signals</b><br>Each sensor provides a 256-sample waveform for the selected two-second window.</div>
-    <div class="ns-step"><b>Step 2 · Frequency analysis</b><br>Welch's method estimates the Power Spectral Density (PSD) of each sensor signal.</div>
-    <div class="ns-step"><b>Step 3 · Five frequency ranges</b><br>The PSD is summarised over Delta, Theta, Alpha, Beta and Gamma bands.</div>
-    <div class="ns-step"><b>Step 4 · Feature vector</b><br>Five values from each of 14 sensors produce 70 numerical features. These are supplied to the trained Random Forest model.</div>
-    """,unsafe_allow_html=True)
-    st.markdown("## Dataset size versus this website's demonstration data")
-    st.write("The full project dataset contains 28,512 EEG windows from 48 participants. This deployed website uses a smaller demonstration subset, so the number of participants and windows shown above may be lower. The model evaluation results shown later were produced using the project’s subject-wise train/test split, not by treating this demonstration subset as the full dataset.")
-    st.markdown("## Why we do not display raw numerical tables here")
-    st.write("Raw sample-by-sample values and all 70 feature numbers are useful for programming and model training, but they are difficult to interpret without signal-processing context. The EEG Signal Analysis, Brain-Wave Analysis and Brain Connectivity sections present these data as waveforms, frequency summaries and sensor-relationship visualisations instead.")
-    person=st.selectbox("Choose a participant to explore",participant_ids,format_func=participant_name,key="dataset_person")
-    idx,rows=choose_recording(person,"dataset_record")
-    st.markdown("### Selected recording summary")
-    p,q,r=st.columns(3)
-    p.metric("Recording duration","2 seconds")
-    q.metric("EEG sensors", "14")
-    r.metric("Extracted features","70")
-    st.write("Open **Explore an EEG recording** to view the actual signal traces, or **Understand brain-wave activity** to inspect the frequency-band features.")
+    The full dataset used in the project contains recordings from **48 participants**. Each recording window contains data from **14 EEG channels**. Every channel has **256 samples**, captured at **128 samples per second**.
+
+    This means that one window represents:
+
+    \[
+    \text{Duration} = \frac{256\text{ samples}}{128\text{ samples/second}} = 2\text{ seconds}
+    \]
+
+    In simple terms, for every two-second window, the dataset stores 256 measurements from each of the 14 sensors.
+    """)
+    st.markdown("## What is an EEG channel or sensor?")
+    st.write("An EEG channel is a signal recorded from one electrode position on the scalp. The 14 channels are 14 separate signal streams. They are not 14 pictures of the brain and the channel numbers shown in this website should not be treated as physical electrode names or anatomical locations unless the original electrode-position mapping is supplied.")
+    st.markdown("## What are the recordings and why are participant numbers not consecutive?")
+    st.write("The full dataset includes 48 participants, but this website is designed to demonstrate the model on the held-out test participants. The project split was participant-wise: 38 participants were used for model training and 10 different participants were reserved for testing. The test participant IDs are therefore not necessarily 1, 2, 3, and so on.")
+    st.write("The IDs shown in the selection menu identify the original participant IDs in the dataset. They may look random because the test participants were selected as a held-out group rather than renumbered from 1 to 10. This is intentional: the model is being evaluated on people it did not see during training.")
+    st.markdown("## Why does each participant have only a limited number of recordings here?")
+    st.write("The full research dataset contains many windows per participant. To keep the online application lightweight and quick to load, the website uses a smaller demonstration subset extracted from the held-out test data. The recording selector therefore shows only the windows included in this demonstration subset, not every recording from the original dataset.")
+    st.write(f"**Currently loaded in this website:** {n:,} demonstration windows from {len(participant_ids)} participant IDs.")
+    counts = pd.Series(people).value_counts().sort_index()
+    counts_df = pd.DataFrame({"Original participant ID":[int(x) for x in counts.index],
+                              "Demonstration recordings available":[int(x) for x in counts.values]})
+    st.dataframe(counts_df, use_container_width=True, hide_index=True)
+    st.caption("This table describes the reduced demonstration files bundled with the website, not the full STEW dataset.")
+    st.markdown("## How the project split the data")
+    split_a, split_b = st.columns(2)
+    with split_a:
+        st.markdown('<div class="ns-card"><small>TRAINING SET</small><h2>38 participants</h2><p>22,572 EEG windows were used to train and compare the machine-learning models.</p></div>', unsafe_allow_html=True)
+    with split_b:
+        st.markdown('<div class="ns-card"><small>TEST SET</small><h2>10 participants</h2><p>5,940 EEG windows from participants not used in training were reserved for evaluation.</p></div>', unsafe_allow_html=True)
+    st.write("This is called a subject-independent or participant-wise split. It is more demanding than randomly splitting windows from the same people, because the test participants are unseen during training. It helps assess whether a model can generalise to different participants.")
+    st.markdown("## How one EEG window becomes 70 model features")
+    st.markdown("""
+    <div class="ns-step"><b>1. Raw EEG window</b><br>14 sensor signals × 256 samples for a two-second segment.</div>
+    <div class="ns-step"><b>2. Preprocessing</b><br>A Butterworth bandpass filter keeps the 1–40 Hz range used by this project.</div>
+    <div class="ns-step"><b>3. Power Spectral Density (PSD)</b><br>Welch's method estimates how the signal's power is distributed across frequencies.</div>
+    <div class="ns-step"><b>4. Frequency-band summaries</b><br>For each sensor, PSD values are summarised in Delta, Theta, Alpha, Beta and Gamma bands.</div>
+    <div class="ns-step"><b>5. Machine-learning input</b><br>14 sensors × 5 band values = 70 features for one EEG window.</div>
+    """, unsafe_allow_html=True)
+    st.markdown("## Files used by the website")
+    st.write("The application uses four demonstration data files: `STEW_X_demo.npy` contains the EEG waveforms; `STEW_features_demo.npy` contains the extracted 70-feature vectors; `STEW_labels_demo.npy` contains the reference workload labels; and `STEW_subjects_demo.npy` identifies the participant associated with each window. The trained Random Forest is loaded separately from `eeg_workload_model.pkl.gz`.")
+    st.markdown("## Important distinction: full dataset vs website demo")
+    st.warning("The full project dataset contains 28,512 windows from 48 participants. The website may show fewer windows and fewer participants because it loads a compact demonstration subset. The model's reported evaluation is based on the subject-wise test set, not merely the small subset displayed in this website.")
+    st.markdown("## What does the dataset allow us to study?")
+    st.write("The STEW dataset supports workload-related EEG analysis because it contains task recordings and workload reference labels. In this project, the trained model predicts the two workload classes. It does not provide emotion labels or validated focus labels, so this dataset and model cannot be used to claim emotion or focus detection.")
 
 # ============================================================
 # 7. BRAIN CONNECTIVITY
@@ -533,7 +605,9 @@ elif page == "Brain connectivity":
     for a,b,v in pairs[:5]:
         st.write(f"**Sensor {a+1} and Sensor {b+1}:** coherence = {v:.3f}")
     st.markdown("""
-    **What is coherence?** Magnitude-squared coherence is a signal-processing measure that describes how consistently two signals share activity at the same frequencies. It is calculated from their power and cross-power spectra.
+    **What is coherence?** Magnitude-squared coherence is a signal-processing measure that describes how consistently two signals share activity at the same frequencies. It is calculated from their power and cross-power spectra. The value is dimensionless and ranges from 0 to 1.
+
+    **Why is the heatmap symmetric?** Coherence is a pairwise relationship, so the value for Sensor A compared with Sensor B is the same as Sensor B compared with Sensor A. The diagonal compares each sensor with itself and is therefore 1 by definition.
 
     **What does it not mean?** A high value does not prove that one brain region is communicating directly with another, that one sensor causes another to change, or that the person has high or low workload. It is an estimate from this short two-second recording and should be interpreted as an exploratory signal relationship.
     """)
@@ -614,6 +688,9 @@ elif page == "Workload pattern over recordings":
                          hover_data=["Alpha","Beta","Theta"])
         fig.update_yaxes(range=[0,1], tickformat=".0%")
         st.plotly_chart(style_plot(fig, 370), use_container_width=True)
+        st.markdown("### How to read the confidence graph")
+        st.write("Each dot represents one stored EEG window in the order it appears in this participant's demonstration subset. The vertical position is the highest model output score among the two workload classes. A value closer to 1 means the model favoured one class more strongly; a value closer to 0.5 means the two class scores are closer together. This is a model score, not a measure of how certain a human expert should be.")
+        st.write("The dot colour shows which workload class the model selected for that window. A change in colour means the predicted class changed between windows. It does not by itself prove that the participant's real workload changed.")
         fig2 = go.Figure()
         for band in ["Theta","Alpha","Beta"]:
             fig2.add_trace(go.Scatter(x=trend["Window order"], y=trend[band], mode="lines",
@@ -622,6 +699,8 @@ elif page == "Workload pattern over recordings":
                            xaxis_title="Window order in the available dataset subset",
                            yaxis_title="Extracted feature value")
         st.plotly_chart(style_plot(fig2, 390), use_container_width=True)
+        st.markdown("### How to read the frequency-feature trend")
+        st.write("The lines show the extracted Theta, Alpha and Beta feature values for successive stored windows. The horizontal axis is the order of windows in the demo subset, not verified clock time. The vertical axis is the numerical feature value. A rise or fall shows that the extracted band feature changed between windows; it is not automatically a rise or fall in workload.")
         class_counts = trend["Predicted workload"].value_counts(dropna=True)
         st.markdown("### Distribution of predicted workload")
         st.dataframe(pd.DataFrame({"Predicted workload":class_counts.index,
@@ -636,32 +715,64 @@ elif page == "Workload pattern over recordings":
 # ============================================================
 elif page == "Research results":
     st.title("Research results")
-    st.write("This section is intended for technical review: it shows how the tested machine-learning models performed.")
-    if model_table is not None and not model_table.empty:
-        st.markdown("## Compare the tested models")
-        st.dataframe(model_table,use_container_width=True,hide_index=True)
-        numeric=model_table.select_dtypes(include=np.number).columns.tolist()
-        namecol=next((c for c in model_table.columns if c not in numeric),None)
-        acccol=next((c for c in numeric if "accuracy" in c.lower()),None)
-        f1col=next((c for c in numeric if "f1" in c.lower()),None)
-        if namecol and acccol:
-            fig=px.bar(model_table,x=namecol,y=acccol,color=namecol,title="Model accuracy comparison",text_auto=".2f")
-            st.plotly_chart(style_plot(fig,350),use_container_width=True)
-        if namecol and f1col:
-            fig=px.bar(model_table,x=namecol,y=f1col,color=namecol,title="Model F1-score comparison",text_auto=".3f")
-            st.plotly_chart(style_plot(fig,350),use_container_width=True)
-    else:
-        st.info("The model comparison file was not found in the repository.")
+    st.write("This section explains how the machine-learning models were compared and how the selected Random Forest performed on participants held out from training.")
+    st.markdown("## Why compare multiple models?")
+    st.write("Different algorithms learn patterns in different ways. The project compared Support Vector Machine (SVM), Random Forest, K-Nearest Neighbours (KNN) and a Multi-Layer Perceptron (MLP). Comparing them on the same test set helps identify which model performed best under the project's evaluation setup.")
+    known = pd.DataFrame({
+        "Model":["SVM","Random Forest","KNN","MLP"],
+        "Accuracy":[0.5461,0.7165,0.5682,0.6258],
+        "F1-score":[0.6617,0.7393,0.6002,0.6743]
+    })
+    st.markdown("### Recorded model comparison")
+    st.dataframe(known.style.format({"Accuracy":"{:.2%}","F1-score":"{:.4f}"}),use_container_width=True,hide_index=True)
+    fig=px.bar(known,x="Model",y="Accuracy",text=known["Accuracy"].map(lambda v:f"{v:.2%}"),
+               title="Accuracy: proportion of test windows classified correctly")
+    fig.update_yaxes(range=[0,1],tickformat=".0%")
+    st.plotly_chart(style_plot(fig,350),use_container_width=True)
+    fig2=px.bar(known,x="Model",y="F1-score",text=known["F1-score"].map(lambda v:f"{v:.3f}"),
+                title="F1-score: balance between precision and recall")
+    fig2.update_yaxes(range=[0,1])
+    st.plotly_chart(style_plot(fig2,350),use_container_width=True)
+    st.markdown("### What do these evaluation terms mean?")
+    st.markdown("""
+    - **Accuracy:** the fraction of all test windows for which the predicted class matched the reference label. For example, 71.65% means roughly 72 out of every 100 test windows were classified correctly.
+    - **Precision:** when the model predicts a particular class, how often that prediction is correct.
+    - **Recall:** of all test windows that truly belong to a class, how many the model successfully identifies.
+    - **F1-score:** a combined measure of precision and recall. It is useful when we want to consider both false alarms and missed examples.
+    """)
+    st.markdown("## Why was Random Forest selected?")
+    st.write("Among the four compared models, Random Forest achieved the highest recorded accuracy (71.65%) and F1-score (0.7393) in this project evaluation. It was therefore selected for the dashboard's workload predictions. This does not mean it will be correct for every recording or every person.")
+    st.markdown("## Evaluation design: unseen participants")
+    st.write("The split was performed by participant: 38 participants (22,572 windows) were used for training, and 10 different participants (5,940 windows) were held out for testing. This is important because windows from the same participant can share individual signal characteristics. Keeping participants separate gives a more meaningful test of generalisation to people not used during training.")
+    st.markdown("## Random Forest confusion matrix")
+    cm = np.array([[1868,1102],[582,2388]])
+    cm_df = pd.DataFrame(cm, index=["Actual Low Workload","Actual High Workload"],
+                         columns=["Predicted Low Workload","Predicted High Workload"])
+    fig_cm = px.imshow(cm_df, text_auto=True, color_continuous_scale="Blues",
+                       labels={"x":"Model prediction","y":"Dataset reference","color":"Number of windows"},
+                       title="Random Forest test-set confusion matrix")
+    st.plotly_chart(style_plot(fig_cm,390),use_container_width=True)
+    st.markdown("""
+    **How to read the confusion matrix:** rows are the actual reference labels from the dataset; columns are the model's predictions. The diagonal cells are correct predictions. The off-diagonal cells are errors: a low-workload example predicted as high, or a high-workload example predicted as low.
+
+    - 1,868 actual low-workload windows were predicted as low.
+    - 1,102 actual low-workload windows were predicted as high.
+    - 582 actual high-workload windows were predicted as low.
+    - 2,388 actual high-workload windows were predicted as high.
+
+    The total is 5,940 test windows, with 4,256 correct predictions, giving 71.65% accuracy.
+    """)
+    st.markdown("## What does this result tell us — and what does it not tell us?")
+    st.write("The results show that Random Forest learned workload-related patterns from the training participants and classified a majority of windows from unseen test participants correctly. The remaining errors show that EEG workload classification is not perfect. These metrics describe performance on this dataset and split only; they are not clinical validation, and they do not establish emotion, focus or medical-state detection.")
     if model is not None and hasattr(model,"feature_importances_") and len(model.feature_importances_)==70:
-        st.markdown("## Which EEG features influenced the Random Forest?")
+        st.markdown("## Which input features does the trained model use?")
         names=[f"Sensor {ch+1} · {band}" for ch in range(14) for band in BAND_NAMES]
         imp=pd.DataFrame({"Feature":names,"Importance":model.feature_importances_}).nlargest(15,"Importance").sort_values("Importance")
-        fig=px.bar(imp,x="Importance",y="Feature",orientation="h",title="15 most influential model features")
+        fig=px.bar(imp,x="Importance",y="Feature",orientation="h",title="15 features with the highest Random Forest importance")
         st.plotly_chart(style_plot(fig,490),use_container_width=True)
-        st.caption("Feature importance describes how the trained model used its inputs. It does not prove that a feature causes workload.")
+        st.write("Each bar is one of the 70 input features. Longer bars indicate greater importance according to the Random Forest's built-in tree-based calculation. These values are relative model-importance scores, not percentages of EEG power and not proof that a sensor causes workload.")
     st.markdown("""
-    <div class="ns-note"><b>Evaluation note:</b> the model was assessed using participants held out from training.
-    Accuracy and F1-score describe classification performance on the test set; they are not clinical performance measures.</div>
+    <div class="ns-note"><b>Evaluation summary:</b> Random Forest was selected because it achieved the strongest recorded performance among the compared models. The participant-wise split provides a test on unseen participants. NeuroSense remains a research prototype and should not be used for clinical or individual high-stakes decisions.</div>
     """,unsafe_allow_html=True)
 
 st.sidebar.markdown("---")
