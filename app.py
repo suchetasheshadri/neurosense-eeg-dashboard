@@ -146,6 +146,54 @@ def feature_matrix(i):
 def band_means(i):
     return np.mean(feature_matrix(i), axis=0)
 
+
+def coherence_matrix(i, band=(8, 30)):
+    """Mean magnitude-squared coherence for every pair of EEG sensors."""
+    from scipy.signal import coherence
+    signals = np.asarray(raw[i], dtype=float)
+    matrix = np.eye(signals.shape[0], dtype=float)
+    for a in range(signals.shape[0]):
+        for b in range(a + 1, signals.shape[0]):
+            f, cxy = coherence(signals[a], signals[b], fs=FS, nperseg=128)
+            keep = (f >= band[0]) & (f <= band[1])
+            value = float(np.mean(cxy[keep])) if np.any(keep) else 0.0
+            matrix[a, b] = matrix[b, a] = value
+    return matrix
+
+
+def local_feature_sensitivity(i):
+    """Model-agnostic one-feature-at-a-time sensitivity around this recording."""
+    if model is None or not hasattr(model, "predict_proba"):
+        return None
+    x = np.asarray(features[i], dtype=float).reshape(-1)
+    try:
+        classes = list(model.classes_)
+        pred = int(np.asarray(model.predict(x.reshape(1, -1))).ravel()[0])
+        class_pos = classes.index(pred)
+        base_prob = float(model.predict_proba(x.reshape(1, -1))[0, class_pos])
+        reference = np.nanmedian(features, axis=0)
+        effects = []
+        for j in range(len(x)):
+            altered = x.copy()
+            altered[j] = reference[j]
+            changed_prob = float(model.predict_proba(altered.reshape(1, -1))[0, class_pos])
+            effects.append(base_prob - changed_prob)
+        names = [f"Sensor {ch+1} · {band}" for ch in range(14) for band in BAND_NAMES]
+        return pd.DataFrame({"Feature": names, "Sensitivity": effects,
+                             "Absolute effect": np.abs(effects)}).sort_values("Absolute effect", ascending=False)
+    except Exception:
+        return None
+
+
+def prediction_confidence(i):
+    pred, probs = get_prediction(i)
+    if pred is None or probs is None:
+        return pred, None, "Unavailable"
+    confidence = float(np.max(probs))
+    # This is a display band, not a calibrated probability guarantee.
+    level = "Higher model confidence" if confidence >= .75 else ("Moderate model confidence" if confidence >= .60 else "Low model confidence")
+    return pred, confidence, level
+
 def show_band_chart(i, title="Frequency pattern in this recording"):
     values = band_means(i)
     df = pd.DataFrame({"Brain-wave band": BAND_NAMES, "Feature value": values})
@@ -192,16 +240,16 @@ def show_prediction(i):
     if pred is None:
         st.error("The saved machine-learning model is not available. Check the model file in the project repository.")
         return
-    st.markdown(f"### Model result: **Category {pred}**")
+    st.markdown(f"### Model result: **Dataset class {pred}**")
     if probs is not None:
-        df = pd.DataFrame({"Model category":[f"Category {int(c)}" for c in model.classes_],
+        df = pd.DataFrame({"Model category":[f"Class {int(c)}" for c in model.classes_],
                            "Model output":[float(v) for v in probs]})
         fig = px.bar(df,x="Model category",y="Model output",color="Model category",
                      title="How strongly the model favoured each category",
                      text=df["Model output"].map(lambda v:f"{v:.1%}"))
         fig.update_yaxes(range=[0,1],tickformat=".0%")
         st.plotly_chart(style_plot(fig,300),use_container_width=True)
-    st.caption("These are model outputs, not medical certainty. The original numeric category meanings must be confirmed before naming them low or high workload.")
+    st.caption("These are model outputs, not medical certainty. The numeric class meanings must be confirmed from the dataset documentation before naming them low or high workload.")
 
 # ----------------------------- NAVIGATION -----------------------------
 st.sidebar.markdown("## 🧠 NeuroSense")
@@ -214,9 +262,12 @@ pages = [
     "Workload report",
     "Compare recordings",
     "About the dataset",
+    "Brain connectivity",
+    "Why did the AI predict this?",
+    "Workload pattern over recordings",
     "Research results"
 ]
-page = st.sidebar.radio("GO TO", pages, label_visibility="collapsed")
+page = st.sidebar.radio("ANALYSIS SECTIONS", pages, label_visibility="visible", key="nav_page")
 st.sidebar.markdown("---")
 st.sidebar.caption("Research prototype · Stored EEG data")
 st.sidebar.caption("No live headset is connected.")
@@ -239,48 +290,45 @@ participant_ids = sorted(np.unique(people).tolist())
 if page == "Welcome":
     st.markdown("""
     <div class="ns-hero">
-      <div class="eyebrow">BIOMEDICAL SIGNAL ANALYSIS PLATFORM</div>
+      <div class="eyebrow">EEG · COGNITIVE WORKLOAD RESEARCH</div>
       <h1>NEUROSENSE</h1>
-      <p><b>See what is inside an EEG recording.</b><br>
-      Explore brain signals, understand five brain-wave frequency ranges and examine
-      how a machine-learning model classifies workload-related EEG patterns.</p>
+      <p><b>From brain signals to interpretable workload evidence.</b><br>
+      NeuroSense analyses multichannel EEG recordings, extracts frequency patterns,
+      examines relationships between sensors and uses machine learning to study
+      workload-related brain activity.</p>
     </div>
-    """,unsafe_allow_html=True)
-    a,b,c,d = st.columns(4)
-    a.metric("Participants in this app",len(participant_ids))
-    b.metric("Brain sensors",14)
-    c.metric("Sampling speed","128 / sec")
-    d.metric("Recording length","2 seconds")
-    st.markdown("## Start exploring")
-    c1,c2,c3 = st.columns(3)
-    with c1:
-        st.markdown('<div class="ns-card"><small>01 · LOOK AT THE SIGNAL</small><h3>Explore a recording</h3><p>See the brain signals from all sensors, view one sensor more closely and inspect its frequency spectrum.</p></div>',unsafe_allow_html=True)
-        if st.button("Open EEG explorer",use_container_width=True):
-            st.session_state["nav_target"]="Explore an EEG recording"
-    with c2:
-        st.markdown('<div class="ns-card"><small>02 · UNDERSTAND THE PATTERN</small><h3>Brain-wave activity</h3><p>Learn what Delta, Theta, Alpha, Beta and Gamma mean and see the values extracted from a recording.</p></div>',unsafe_allow_html=True)
-        if st.button("Explore brain-wave bands",use_container_width=True):
-            st.session_state["nav_target"]="Understand brain-wave activity"
-    with c3:
-        st.markdown("<div class='ns-card'><small>03 · READ THE RESULT</small><h3>Workload report</h3><p>See the model's category, its output probabilities and a plain-language explanation.</p></div>",unsafe_allow_html=True)
-        if st.button("View workload report",use_container_width=True):
-            st.session_state["nav_target"]="Workload report"
-    if "nav_target" in st.session_state:
-        st.info(f"Use the left navigation to open **{st.session_state.pop('nav_target')}**.")
-    st.markdown("## How NeuroSense works")
-    steps=st.columns(5)
-    for col,(num,title,desc) in zip(steps,[
-        ("1","EEG dataset","Previously recorded brain signals"),
-        ("2","Signal cleaning","Keep the 1–40 Hz range"),
-        ("3","Brain-wave features","Five frequency ranges per sensor"),
-        ("4","AI model","Classifies workload-related patterns"),
-        ("5","Visual report","Charts and understandable results")]):
+    """, unsafe_allow_html=True)
+    k1,k2,k3,k4 = st.columns(4)
+    k1.metric("EEG sensors", "14")
+    k2.metric("Sampling rate", "128 Hz")
+    k3.metric("Window duration", "2 seconds")
+    k4.metric("Features per window", "70")
+    st.markdown("## What makes this more than a classifier?")
+    n1,n2,n3 = st.columns(3)
+    with n1:
+        st.markdown('<div class="ns-card"><small>01 · SIGNAL RELATIONSHIPS</small><h3>Brain connectivity</h3><p>Measure frequency-domain synchrony between sensor pairs, not only the activity at each sensor.</p></div>', unsafe_allow_html=True)
+    with n2:
+        st.markdown('<div class="ns-card"><small>02 · MODEL TRANSPARENCY</small><h3>Prediction explanation</h3><p>Show which sensor and frequency-band features most influence an individual model result.</p></div>', unsafe_allow_html=True)
+    with n3:
+        st.markdown('<div class="ns-card"><small>03 · RECORDING PATTERNS</small><h3>Across-window analysis</h3><p>Explore how model outputs and EEG features vary across the stored windows for a participant.</p></div>', unsafe_allow_html=True)
+    st.markdown("## Analysis workflow")
+    steps = st.columns(5)
+    for col, (num, title, desc) in zip(steps, [
+        ("1", "EEG recordings", "14 sensors · STEW dataset"),
+        ("2", "Preprocessing", "1–40 Hz bandpass filter"),
+        ("3", "Feature analysis", "PSD bands + connectivity"),
+        ("4", "Machine learning", "Random Forest classification"),
+        ("5", "Interpretation", "Feature contribution + trends")
+    ]):
         with col:
-            st.markdown(f'<div class="ns-card"><small>STEP {num}</small><h3>{title}</h3><p>{desc}</p></div>',unsafe_allow_html=True)
+            st.markdown(f'<div class="ns-card"><small>STEP {num}</small><h3>{title}</h3><p>{desc}</p></div>', unsafe_allow_html=True)
     st.markdown("""
-    <div class="ns-note"><b>What this project currently does:</b> analyses stored EEG recordings from the STEW dataset.
-    It is a software research prototype, not a live headset or medical diagnostic system.</div>
-    """,unsafe_allow_html=True)
+    <div class="ns-note"><b>Project scope:</b> this is an offline research prototype using stored STEW EEG data.
+    It does not acquire signals wirelessly, diagnose a person or directly identify emotion, attention or fatigue.
+    The model predicts the dataset's two workload-related classes.</div>
+    """, unsafe_allow_html=True)
+    st.markdown("## Open an analysis")
+    st.write("Choose a section from the navigation panel. Start with EEG Signal Analysis, then explore Brain Connectivity and AI Explanation.")
 
 # ============================================================
 # 2. EXPLORE A RECORDING
@@ -364,14 +412,14 @@ elif page == "Workload report":
         else:
             st.warning("For this recording, the model result differs from the category stored in the dataset.")
         if probs is not None:
-            df=pd.DataFrame({"Category":[f"Category {int(c)}" for c in model.classes_],"Model output":probs})
+            df=pd.DataFrame({"Category":[f"Class {int(c)}" for c in model.classes_],"Model output":probs})
             fig=px.bar(df,x="Category",y="Model output",color="Category",text=df["Model output"].map(lambda v:f"{v:.1%}"),title="Model's output for each category")
             fig.update_yaxes(range=[0,1],tickformat=".0%")
             st.plotly_chart(style_plot(fig,310),use_container_width=True)
     st.markdown("## What does this result mean?")
-    st.write("The AI model has compared the recording's 70 extracted EEG features with patterns it learned during training and selected one of the two dataset categories.")
+    st.write("The AI model has compared the recording's 70 extracted EEG features with patterns it learned during training and selected one of the two workload-related dataset classes.")
     st.markdown("""
-    <div class="ns-warn"><b>Important:</b> We have not yet confirmed from the original STEW label documentation which numerical category represents low workload and which represents high workload. Until verified, the report uses Category 0 and Category 1 rather than making an unsupported low/high claim.</div>
+    <div class="ns-warn"><b>Important:</b> We have not yet confirmed from the original STEW label documentation which numerical category represents low workload and which represents high workload. Until verified, the report uses Class 0 and Class 1 rather than making an unsupported low/high claim.</div>
     """,unsafe_allow_html=True)
     st.markdown("## Signal check")
     checks=[check_signal(raw[idx,ch,:]) for ch in range(14)]
@@ -459,7 +507,116 @@ elif page == "About the dataset":
     st.markdown(f'<div class="ns-warn"><b>Dataset transparency:</b> this deployed app contains {n:,} demonstration windows. The full STEW dataset used in the project has 28,512 windows from 48 participants. The deployed subset should not be described as the complete dataset.</div>',unsafe_allow_html=True)
 
 # ============================================================
-# 7. RESEARCH RESULTS
+# 7. BRAIN CONNECTIVITY
+# ============================================================
+elif page == "Brain connectivity":
+    st.title("Brain connectivity analysis")
+    st.write("A single sensor shows activity at one scalp location. Connectivity analysis asks a different question: how similar or synchronised are the signals recorded at two sensor positions?")
+    person = st.selectbox("Choose a participant", participant_ids, format_func=participant_name, key="connect_person")
+    idx, rows = choose_recording(person, "connect_record")
+    band_choice = st.selectbox("Frequency range to examine", ["Alpha (8–13 Hz)", "Beta (13–30 Hz)", "Alpha + Beta (8–30 Hz)"], key="connect_band")
+    ranges = {"Alpha (8–13 Hz)": (8,13), "Beta (13–30 Hz)": (13,30), "Alpha + Beta (8–30 Hz)": (8,30)}
+    matrix = coherence_matrix(idx, ranges[band_choice])
+    fig = px.imshow(matrix, x=[f"S{i+1}" for i in range(14)], y=[f"S{i+1}" for i in range(14)],
+                    zmin=0, zmax=1, color_continuous_scale="Viridis",
+                    labels={"x":"Sensor","y":"Sensor","color":"Coherence"},
+                    title=f"Pairwise sensor coherence · {band_choice}")
+    st.plotly_chart(style_plot(fig, 540), use_container_width=True)
+    pairs = []
+    for a in range(14):
+        for b in range(a+1,14):
+            pairs.append((a,b,matrix[a,b]))
+    pairs.sort(key=lambda x:x[2], reverse=True)
+    top = pd.DataFrame([{"Sensor pair":f"Sensor {a+1} ↔ Sensor {b+1}", "Coherence":v} for a,b,v in pairs[:10]])
+    st.markdown("### Strongest sensor relationships in this recording")
+    st.dataframe(top, use_container_width=True, hide_index=True)
+    st.markdown("""
+    <div class="ns-note"><b>Interpretation:</b> magnitude-squared coherence (0 to 1) measures the consistency of a frequency relationship between two signals. Higher values indicate stronger statistical synchrony in the selected frequency range. This is not proof of direct neural communication, causal influence or a clinical brain-network state.</div>
+    """, unsafe_allow_html=True)
+
+
+# ============================================================
+# 8. EXPLAINABLE AI
+# ============================================================
+elif page == "Why did the AI predict this?":
+    st.title("Why did the AI predict this?")
+    st.write("The model returns a class. This page investigates which of the 70 EEG features most influenced that result.")
+    person = st.selectbox("Choose a participant", participant_ids, format_func=participant_name, key="explain_person")
+    idx, rows = choose_recording(person, "explain_record")
+    pred, confidence, level = prediction_confidence(idx)
+    if pred is None:
+        st.error("The trained model or prediction probabilities are unavailable.")
+    else:
+        a,b,c = st.columns(3)
+        a.metric("Predicted dataset class", f"Class {pred}")
+        b.metric("Highest class probability", f"{confidence:.1%}" if confidence is not None else "Unavailable")
+        c.metric("Confidence display", level)
+        st.caption("The probability is the model's output, not a calibrated measure of certainty or a medical probability.")
+        explanation = local_feature_sensitivity(idx)
+        if explanation is None:
+            st.warning("Individual feature sensitivity could not be calculated with the available model.")
+        else:
+            top = explanation.head(12).sort_values("Sensitivity")
+            fig = px.bar(top, x="Sensitivity", y="Feature", orientation="h",
+                         title="Features with the largest local effect on the predicted class probability",
+                         color="Sensitivity", color_continuous_scale="RdBu")
+            st.plotly_chart(style_plot(fig, 500), use_container_width=True)
+            st.write("How this estimate is calculated: one feature at a time is replaced with its median value from the available demonstration dataset. The change in the predicted-class probability is measured. Larger absolute changes indicate greater local sensitivity.")
+            st.dataframe(explanation.head(15)[["Feature","Sensitivity"]].round(4), use_container_width=True, hide_index=True)
+        if hasattr(model, "feature_importances_") and len(model.feature_importances_) == 70:
+            st.markdown("### Overall model behaviour")
+            names = [f"Sensor {ch+1} · {band}" for ch in range(14) for band in BAND_NAMES]
+            imp = pd.DataFrame({"Feature":names, "Importance":model.feature_importances_}).nlargest(10,"Importance").sort_values("Importance")
+            fig2 = px.bar(imp, x="Importance", y="Feature", orientation="h", title="Top features across the trained Random Forest")
+            st.plotly_chart(style_plot(fig2, 420), use_container_width=True)
+    st.markdown("""
+    <div class="ns-warn"><b>Scientific limitation:</b> local feature replacement is a sensitivity analysis, not SHAP and not a causal explanation. Correlated EEG features can affect interpretation. Feature importance indicates how the model uses inputs; it does not prove that a sensor or frequency band causes workload.</div>
+    """, unsafe_allow_html=True)
+
+
+# ============================================================
+# 9. ACROSS-WINDOW PATTERNS
+# ============================================================
+elif page == "Workload pattern over recordings":
+    st.title("Workload pattern across stored recordings")
+    st.write("Explore how the model's class output and EEG features vary across the available windows for one participant.")
+    person = st.selectbox("Choose a participant", participant_ids, format_func=participant_name, key="trend_person")
+    rows = get_person_rows(person)
+    records = []
+    for order, idx in enumerate(rows):
+        pred, probs = get_prediction(int(idx))
+        band_vals = band_means(int(idx))
+        records.append({"Window order":order+1, "Dataset class":pred,
+                        "Model confidence":float(np.max(probs)) if probs is not None else np.nan,
+                        "Alpha":band_vals[2], "Beta":band_vals[3], "Theta":band_vals[1]})
+    trend = pd.DataFrame(records)
+    if trend.empty:
+        st.info("No recordings are available for this participant.")
+    else:
+        fig = px.scatter(trend, x="Window order", y="Model confidence", color="Dataset class",
+                         title="Model output confidence across stored windows",
+                         hover_data=["Alpha","Beta","Theta"])
+        fig.update_yaxes(range=[0,1], tickformat=".0%")
+        st.plotly_chart(style_plot(fig, 370), use_container_width=True)
+        fig2 = go.Figure()
+        for band in ["Theta","Alpha","Beta"]:
+            fig2.add_trace(go.Scatter(x=trend["Window order"], y=trend[band], mode="lines",
+                                      name=f"{band} feature"))
+        fig2.update_layout(title="Selected frequency-band features across windows",
+                           xaxis_title="Window order in the available dataset subset",
+                           yaxis_title="Extracted feature value")
+        st.plotly_chart(style_plot(fig2, 390), use_container_width=True)
+        class_counts = trend["Dataset class"].value_counts(dropna=True).sort_index()
+        st.markdown("### Distribution of predicted classes")
+        st.dataframe(pd.DataFrame({"Dataset class":[f"Class {int(c)}" for c in class_counts.index],
+                                   "Number of windows":class_counts.values}), use_container_width=True, hide_index=True)
+    st.markdown("""
+    <div class="ns-warn"><b>Important:</b> this visualises the order of windows in the stored demonstration data. It is not a validated continuous-time workload trace, live monitoring or proof of a person's workload changing over time. Temporal interpretation requires verified timestamps or task sequence metadata.</div>
+    """, unsafe_allow_html=True)
+
+
+# ============================================================
+# 10. RESEARCH RESULTS
 # ============================================================
 elif page == "Research results":
     st.title("Research results")
@@ -486,9 +643,6 @@ elif page == "Research results":
         fig=px.bar(imp,x="Importance",y="Feature",orientation="h",title="15 most influential model features")
         st.plotly_chart(style_plot(fig,490),use_container_width=True)
         st.caption("Feature importance describes how the trained model used its inputs. It does not prove that a feature causes workload.")
-    if saved_predictions is not None:
-        with st.expander("View saved test predictions"):
-            st.dataframe(saved_predictions.head(50),use_container_width=True,hide_index=True)
     st.markdown("""
     <div class="ns-note"><b>Evaluation note:</b> the model was assessed using participants held out from training.
     Accuracy and F1-score describe classification performance on the test set; they are not clinical performance measures.</div>
