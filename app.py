@@ -340,7 +340,7 @@ elif page == "Explore an EEG recording":
     st.markdown(f'<div class="ns-step"><b>Why these participant and recording numbers?</b><br>The participant number is the original ID from the STEW dataset. This website displays a compact subset of held-out test participants, so IDs are not renumbered consecutively. Recording 001, 002 and so on are simply the order of the available demo windows for that participant; they are not task names or session numbers.</div>',unsafe_allow_html=True)
     st.markdown('<div class="ns-step"><b>What you are looking at</b><br>Each displayed window lasts 2 seconds. Fourteen EEG channels record small voltage changes from scalp electrodes. The traces are separated vertically for visibility; their vertical positions do not represent actual electrode locations.</div>',unsafe_allow_html=True)
     st.markdown("## The 14 recorded EEG traces")
-    st.info("These are the 14 channels stored in the STEW data file, plotted as separate vertically offset traces so they can be viewed together. They are not a picture of the brain or a scalp electrode-position map. The vertical spacing is added only for readability; it is not a physical sensor distance.")
+    st.info("A trace is the line showing one sensor's signal over the two-second window. All 14 traces are taken from the selected EEG window in the STEW demo data — one line per recorded channel. They are shifted vertically only to prevent overlap; the spacing is not electrode distance or a brain map. The x-axis is time and the y-axis is signal amplitude in the dataset's numerical scale.")
     show_all_sensors(idx)
     st.markdown("## Zoom in on one sensor")
     sensor=st.selectbox("Choose a sensor position",list(range(14)),format_func=lambda x:f"Sensor {x+1}",key="explore_sensor")
@@ -534,19 +534,29 @@ elif page == "About the dataset":
 
     This means that one window represents:
 
-    \[
-    \text{Duration} = \frac{256\text{ samples}}{128\text{ samples/second}} = 2\text{ seconds}
-    \]
+    **Duration = number of samples ÷ sampling rate**
 
-    In simple terms, for every two-second window, the dataset stores 256 measurements from each of the 14 sensors.
+    **Duration = 256 samples ÷ 128 samples/second = 2 seconds**
+
+    In simple terms, for every two-second window, the dataset stores 256 measurements from each of the 14 sensors. The formula is written as ordinary text so it displays correctly on every browser.
     """)
     st.markdown("## What is an EEG channel or sensor?")
     st.write("An EEG channel is a signal recorded from one electrode position on the scalp. The 14 channels are 14 separate signal streams. They are not 14 pictures of the brain and the channel numbers shown in this website should not be treated as physical electrode names or anatomical locations unless the original electrode-position mapping is supplied.")
-    st.markdown("## What are the recordings and why are participant numbers not consecutive?")
-    st.write("The full dataset includes 48 participants, but this website is designed to demonstrate the model on the held-out test participants. The project split was participant-wise: 38 participants were used for model training and 10 different participants were reserved for testing. The test participant IDs are therefore not necessarily 1, 2, 3, and so on.")
-    st.write("The IDs shown in the selection menu identify the original participant IDs in the dataset. They may look random because the test participants were selected as a held-out group rather than renumbered from 1 to 10. This is intentional: the model is being evaluated on people it did not see during training.")
-    st.markdown("## Why does each participant have only a limited number of recordings here?")
-    st.write("The full research dataset contains many windows per participant. To keep the online application lightweight and quick to load, the website uses a smaller demonstration subset extracted from the held-out test data. The recording selector therefore shows only the windows included in this demonstration subset, not every recording from the original dataset.")
+    st.markdown("## Why do the participant IDs look random?")
+    st.write("The participant numbers shown in the website are the original IDs assigned in the STEW dataset. They have not been renumbered as Participant 1 to Participant 10. For the project evaluation, the participants were divided by person: 38 participants were used to train the model, while 10 different participants were kept aside as unseen test participants.")
+    st.write("The ten held-out test IDs used in this project are **5, 13, 20, 25, 26, 27, 28, 38, 41 and 44**. They appear non-consecutive because they are the original participant IDs selected for the test group. This is a participant-wise split: the model did not train on recordings from these ten people before being evaluated on them.")
+    st.markdown("### What happened to the other 38 participants?")
+    st.write("The other 38 participants were used during model development and training. Their recordings helped the algorithms learn workload-related EEG patterns. They are not the main participants offered in this demonstration menu because this page is intended to let visitors inspect examples from the held-out test group. Keeping the test participants separate helps prevent the evaluation from being overly optimistic.")
+    st.markdown("## Why are only Recording 001, 002, and so on shown?")
+    st.write("The full dataset contains many short windows for each participant. The online website uses a compact demonstration subset to keep the app responsive. In this subset, the available windows for each participant are displayed as Recording 001, Recording 002, and so on.")
+    st.write("These numbers are simple display sequence numbers assigned to the windows available in the demo file. They are **not** official STEW session names, task names, or necessarily the complete set of recordings made by that participant. Each selected window is a short two-second EEG segment.")
+    st.markdown("## What are the 14 traces shown in EEG Signal Analysis?")
+    st.write("A trace is simply a line showing how one EEG channel's measured signal changes over time. The selected two-second window contains 14 channels, so the graph draws 14 separate traces — one from each channel. The app does not choose only a few sensors or create these lines artificially; it plots the 14 channel signals stored for that selected participant and window.")
+    st.write("The horizontal axis is time from 0 to 2 seconds. The vertical axis represents signal amplitude in the numerical units stored in the dataset. The traces are shifted vertically by an artificial spacing so that they do not overlap and can be viewed together. This spacing is only for display: it does not represent the physical distance between electrodes, their position on the head, or a brain map.")
+    st.markdown("### How were the participants and traces selected?")
+    st.write("The participant menu is populated from the participant IDs present in `STEW_subjects_demo.npy`. When you choose a participant, the app finds the rows/windows in the demo files that belong to that ID. The recording menu then lists those available windows in their stored order. For a selected window, all 14 channel waveforms are taken from the corresponding entry in `STEW_X_demo.npy`. The matching 70 features, workload label and participant ID are taken from the corresponding rows in the other demo files.")
+    st.markdown("### Why use unseen participants for the demonstration?")
+    st.write("This lets the visitor see how the trained model behaves on participants who were held out from training. It is a stronger demonstration of generalisation than showing only training examples. However, the website's small subset is for exploration; the model's overall accuracy and confusion matrix come from the full held-out test evaluation, not just the few windows shown here.")
     st.write(f"**Currently loaded in this website:** {n:,} demonstration windows from {len(participant_ids)} participant IDs.")
     counts = pd.Series(people).value_counts().sort_index()
     counts_df = pd.DataFrame({"Original participant ID":[int(x) for x in counts.index],
